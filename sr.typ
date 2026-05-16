@@ -1,6 +1,5 @@
 #import "@preview/cetz:0.5.2"
 
-
 #set page(
   paper: "a4",
   header: align(right)[
@@ -8,7 +7,8 @@
   numbering: "1",
 )
 #set par(justify: true)
-#set text(size: 11pt)
+#set text(size: 11pt, lang: "en")
+#set heading(numbering: "1.1.1")
 
 #show title: set text(size: 17pt)
 #show title: set align(center)
@@ -81,6 +81,7 @@ Consider the following figure:
       },
     )
   }),
+  caption: [Visualization of the first projection approach],
 )
 
 The point $C$ is supposed to be the camera looking at the points $A,B$.
@@ -146,22 +147,6 @@ Take a look at the following cube I drew using this formula:
 }
 
 #figure(
-  cetz.canvas({
-    import cetz.draw: *
-
-    let points = (
-      (1, 1, 1),
-      (1, 1, 2),
-      (1, 2, 1),
-      (1, 2, 2),
-      (2, 1, 1),
-      (2, 1, 2),
-      (2, 2, 2),
-      (2, 2, 1),
-    )
-    let cam = (-1, -0.7, -5)
-    for p in points {
-      circle(project(cam, p), radius: (0.02, 0.02))
-    }
-  }),
+  image("res/sr_fig_1.png", width: 6cm, height: 4.5cm),
+  caption: [Example of the first projection approach],
 )

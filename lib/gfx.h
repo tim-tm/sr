@@ -4,7 +4,6 @@
 #include <assert.h>
 #include <math.h>
 #include <stdint.h>
-#include <stdio.h>
 
 typedef union {
     struct {
@@ -46,7 +45,6 @@ typedef struct {
 
 typedef struct {
     gfx_vec3f position;
-    gfx_vec3f orientation;
 } gfx_camera;
 
 #define GFX_PIXEL_AT(s, x, y) (s).pixels[(y) * (s).width + (x)]
@@ -57,8 +55,7 @@ void gfx_fill_rect(gfx_state state, uint32_t x, uint32_t y, uint32_t w,
 void gfx_line(gfx_state state, uint32_t start_x, uint32_t start_y,
               uint32_t end_x, uint32_t end_y, gfx_color color);
 
-gfx_vec2f gfx_screen_coord(gfx_vec2f point, gfx_vec2i bounds);
-gfx_vec2f gfx_project(gfx_state state, gfx_vec3f point);
+gfx_vec2f gfx_project(gfx_camera camera, gfx_vec3f point);
 gfx_vec2f gfx_rotate(gfx_vec2f point, float theta);
 gfx_vec3f gfx_rotate_xz(gfx_vec3f point, float theta);
 
@@ -93,21 +90,14 @@ void gfx_line(gfx_state state, uint32_t start_x, uint32_t start_y,
     }
 }
 
-gfx_vec2f gfx_screen_coord(gfx_vec2f point, gfx_vec2i bounds) {
-    return (gfx_vec2f){
-        .x = ((point.x + 1) / 2) * (float)bounds.x,
-        .y = (1 - ((point.y + 1) / 2)) * (float)bounds.y,
-    };
-}
+gfx_vec2f gfx_project(gfx_camera camera, gfx_vec3f point) {
+    assert(point.z != camera.position.z);
 
-gfx_vec2f gfx_project(gfx_state state, gfx_vec3f point) {
-    assert(state.width <= INT32_MAX && state.height <= INT32_MAX);
-
-    gfx_vec2i bounds2d = {.x = (int32_t)state.width,
-                          .y = (int32_t)state.height};
-    gfx_vec2f projected =
-        (gfx_vec2f){.x = point.x / point.z, .y = point.y / point.z};
-    return gfx_screen_coord(projected, bounds2d);
+    float factor = 1 / (point.z - camera.position.z);
+    return (gfx_vec2f){.x = factor * (camera.position.x * point.z -
+                                      camera.position.z * point.x),
+                       .y = factor * (camera.position.y * point.z -
+                                      camera.position.z * point.y)};
 }
 
 gfx_vec2f gfx_rotate(gfx_vec2f point, float theta) {
