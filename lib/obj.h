@@ -1,6 +1,7 @@
 #ifndef OBJ_H_
 #define OBJ_H_
 
+#include <limits.h>
 #include <math.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -21,7 +22,7 @@ struct obj_vertex {
 };
 
 struct obj_face {
-    size_t *coordinates;
+    long long *coordinates;
     size_t coordinates_count;
     size_t coordinates_capacity;
 };
@@ -124,7 +125,7 @@ struct obj_parse_result *obj_parse(const char *content, size_t content_len) {
                 i = diff;
             }
 
-            if (result->vertices_count + 1 >= result->vertices_capacity) {
+            if (result->vertices_count >= result->vertices_capacity) {
                 result->vertices_capacity *= 2;
                 result->vertices =
                     realloc(result->vertices, sizeof(struct obj_vertex) *
@@ -135,8 +136,56 @@ struct obj_parse_result *obj_parse(const char *content, size_t content_len) {
             result->vertices[result->vertices_count++] = vert;
         } break;
         case 'f': {
+            if (i + 1 >= content_len) {
+                printf("unterminated face\n");
+                return NULL;
+            }
+            i++;
+
+            struct obj_face face = {.coordinates = NULL,
+                                    .coordinates_count = 0,
+                                    // faces will usually be triangles
+                                    .coordinates_capacity = 3};
+            face.coordinates =
+                malloc(sizeof(long long) * face.coordinates_capacity);
+            if (face.coordinates == NULL) {
+                return NULL;
+            }
+
+            while (i < content_len && content[i] == ' ') {
+                if (face.coordinates_count >= face.coordinates_capacity) {
+                    face.coordinates_capacity *= 2;
+                    face.coordinates =
+                        realloc(face.coordinates,
+                                sizeof(long long) * face.coordinates_capacity);
+                    if (face.coordinates == NULL)
+                        return NULL;
+                }
+
+                char *stop_str;
+                long long result = strtoll(content + i + 1, &stop_str, 10);
+                if (result == LLONG_MIN || result == LLONG_MAX) {
+                    printf("invalid face size\n");
+                    return NULL;
+                }
+                face.coordinates[face.coordinates_count++] = result;
+
+                size_t diff = stop_str - content;
+                i = diff;
+            }
+
+            if (result->faces_count >= result->faces_capacity) {
+                result->faces_capacity *= 2;
+                result->faces =
+                    realloc(result->faces,
+                            sizeof(struct obj_face) * result->faces_capacity);
+                if (result->faces == NULL)
+                    return NULL;
+            }
+            result->faces[result->faces_count++] = face;
         } break;
         default: {
+            printf("unhandled character: %d\n", content[i]);
         } break;
         }
         i++;
